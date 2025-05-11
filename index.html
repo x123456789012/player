@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HarmonyStream | Modern Music Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --dark: #2d3436;
+            --light: #f5f6fa;
+            --accent: #fd79a8;
+            --success: #00b894;
+            --text: #2d3436;
+            --text-light: #636e72;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --glass-bg: rgba(255, 255, 255, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .logo i {
+            color: var(--accent);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 15px;
+        }
+
+        .tab-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .player-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            transition: var(--transition);
+        }
+
+        .player-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.8);
+            transition: var(--transition);
+        }
+
+        .url-input:focus {
+            outline: none;
+            background: white;
+            box-shadow: 0 0 0 3px var(--secondary);
+        }
+
+        .play-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .play-btn:hover {
+            background: #5649c5;
+            transform: scale(1.05);
+        }
+
+        .player-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background: #000;
+        }
+
+        #player {
+            width: 100%;
+            height: 100%;
+        }
+
+        .player-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+            opacity: 0;
+            transition: var(--transition);
+            pointer-events: none;
+        }
+
+        .player-container:hover .player-overlay {
+            opacity: 1;
+        }
+
+        .song-info {
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .song-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .song-artist {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .main-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .control-btn.like-btn.liked {
+            color: var(--accent);
+        }
+
+        .speed-control {
+            position: relative;
+        }
+
+        .speed-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .speed-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .speed-options {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 10px;
+            min-width: 80px;
+        }
+
+        .speed-control:hover .speed-options {
+            display: flex;
+        }
+
+        .speed-option {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: left;
+            transition: var(--transition);
+        }
+
+        .speed-option:hover, .speed-option.active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+
+        .liked-songs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .liked-song-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .liked-song-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .liked-song-thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+        }
+
+        .liked-song-info {
+            padding: 15px;
+        }
+
+        .liked-song-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .liked-song-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: white;
+        }
+
+        .empty-state i {
+            font-size: 50px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            font-size: 22px;
+        }
+
+        .empty-state p {
+            opacity: 0.8;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .floating-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            max-width: 350px;
+            z-index: 100;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .floating-player.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .floating-thumbnail {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .floating-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .floating-title {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 5px;
+        }
+
+        .floating-artist {
+            font-size: 12px;
+            color: var(--text-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .floating-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .floating-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .floating-btn.liked {
+            background: var(--accent);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+
+            .tabs {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .tab-btn {
+                flex: 1;
+                text-align: center;
+                padding: 10px;
+            }
+
+            .player-card {
+                padding: 20px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .play-btn {
+                padding: 15px;
+                justify-content: center;
+            }
+
+            .liked-songs-container {
+                grid-template-columns: 1fr;
+            }
+
+            .floating-player {
+                max-width: calc(100% - 40px);
+                bottom: 10px;
+                right: 10px;
+            }
+        }
+
+        /* Loading animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--accent);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        /* Theme variations */
+        .theme-1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .theme-2 {
+            background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+        }
+        .theme-3 {
+            background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+        }
+        .theme-4 {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+        }
+        .theme-5 {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+        }
+    </style>
+</head>
+<body class="theme-1">
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-music"></i>
+                <span>HarmonyStream</span>
+            </div>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="player-tab">Player</button>
+                <button class="tab-btn" data-tab="liked-tab">Liked Songs</button>
+            </div>
+        </header>
+
+        <div class="tab-content active" id="player-tab">
+            <div class="player-card">
+                <div class="input-group">
+                    <input type="text" class="url-input" placeholder="Paste YouTube music video URL here...">
+                    <button class="play-btn" id="play-btn">
+                        <i class="fas fa-play"></i>
+                        <span>Play</span>
+                    </button>
+                </div>
+
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading your music...</p>
+                </div>
+
+                <div class="player-container" id="player-container" style="display: none;">
+                    <div id="player"></div>
+                    <div class="player-overlay">
+                        <div class="song-info">
+                            <h2 class="song-title" id="song-title">Song Title</h2>
+                            <p class="song-artist" id="song-artist">Artist Name</p>
+                        </div>
+                        <div class="progress-container" id="progress-container">
+                            <div class="progress-bar" id="progress-bar"></div>
+                        </div>
+                        <div class="time-display">
+                            <span id="current-time">0:00</span>
+                            <span id="duration">0:00</span>
+                        </div>
+                        <div class="controls">
+                            <div class="main-controls">
+                                <button class="control-btn like-btn" id="like-btn">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                            </div>
+                            <div class="speed-control">
+                                <button class="speed-btn" id="speed-btn">1x</button>
+                                <div class="speed-options">
+                                    <button class="speed-option" data-speed="0.5">0.5x</button>
+                                    <button class="speed-option" data-speed="0.75">0.75x</button>
+                                    <button class="speed-option active" data-speed="1">1x</button>
+                                    <button class="speed-option" data-speed="1.25">1.25x</button>
+                                    <button class="speed-option" data-speed="1.5">1.5x</button>
+                                    <button class="speed-option" data-speed="1.75">1.75x</button>
+                                    <button class="speed-option" data-speed="2">2x</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="liked-tab">
+            <div class="player-card">
+                <h2 style="margin-bottom: 20px;">Your Liked Songs</h2>
+                <div class="liked-songs-container" id="liked-songs-container">
+                    <!-- Liked songs will be added here dynamically -->
+                </div>
+                <div class="empty-state" id="empty-liked" style="display: none;">
+                    <i class="far fa-heart"></i>
+                    <h3>No liked songs yet</h3>
+                    <p>Like some songs in the player tab and they'll appear here for quick access.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-player" id="floating-player">
+        <img src="" alt="Thumbnail" class="floating-thumbnail" id="floating-thumbnail">
+        <div class="floating-info">
+            <div class="floating-title" id="floating-title">Song Title</div>
+            <div class="floating-artist" id="floating-artist">Artist</div>
+        </div>
+        <div class="floating-controls">
+            <button class="floating-btn like-btn" id="floating-like-btn">
+                <i class="far fa-heart"></i>
+            </button>
+            <button class="floating-btn" id="floating-play-btn">
+                <i class="fas fa-play"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-message">Song added to liked!</span>
+    </div>
+
+    <script>
+        // DOM Elements
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const urlInput = document.querySelector('.url-input');
+        const playBtn = document.getElementById('play-btn');
+        const playerContainer = document.getElementById('player-container');
+        const loadingElement = document.querySelector('.loading');
+        const songTitle = document.getElementById('song-title');
+        const songArtist = document.getElementById('song-artist');
+        const likeBtn = document.getElementById('like-btn');
+        const speedBtn = document.getElementById('speed-btn');
+        const speedOptions = document.querySelectorAll('.speed-option');
+        const progressBar = document.getElementById('progress-bar');
+        const progressContainer = document.getElementById('progress-container');
+        const currentTimeDisplay = document.getElementById('current-time');
+        const durationDisplay = document.getElementById('duration');
+        const likedSongsContainer = document.getElementById('liked-songs-container');
+        const emptyLikedState = document.getElementById('empty-liked');
+        const floatingPlayer = document.getElementById('floating-player');
+        const floatingThumbnail = document.getElementById('floating-thumbnail');
+        const floatingTitle = document.getElementById('floating-title');
+        const floatingArtist = document.getElementById('floating-artist');
+        const floatingLikeBtn = document.getElementById('floating-like-btn');
+        const floatingPlayBtn = document.getElementById('floating-play-btn');
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+
+        // YouTube Player API
+        let player;
+        let currentVideoId = '';
+        let currentVideoTitle = '';
+        let currentVideoArtist = '';
+        let currentVideoThumbnail = '';
+        let isPlaying = false;
+        let isLiked = false;
+        let playbackRate = 1;
+        let updateInterval;
+
+        // Liked songs array
+        let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
+
+        // Tab switching
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                
+                // Update active tab button
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Update active tab content
+                tabContents.forEach(content => content.classList.remove('active'));
+                document.getElementById(tabId).classList.add('active');
+                
+                // If switching to liked songs tab, render the liked songs
+                if (tabId === 'liked-tab') {
+                    renderLikedSongs();
+                }
+            });
+        });
+
+        // Play button click handler
+        playBtn.addEventListener('click', () => {
+            const url = urlInput.value.trim();
+            if (!url) return;
+
+            // Extract video ID from URL
+            const videoId = extractVideoId(url);
+            if (!videoId) {
+                showNotification('Invalid YouTube URL');
+                return;
+            }
+
+            loadVideo(videoId);
+        });
+
+        // Extract video ID from YouTube URL
+        function extractVideoId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        // Load YouTube video
+        function loadVideo(videoId) {
+            currentVideoId = videoId;
+            
+            // Show loading state
+            playerContainer.style.display = 'none';
+            loadingElement.style.display = 'block';
+            
+            // Initialize player if not already initialized
+            if (!player) {
+                initializePlayer();
+            } else {
+                // Load new video
+                player.loadVideoById(videoId);
+            }
+            
+            // Get video info (title, thumbnail)
+            getVideoInfo(videoId);
+        }
+
+        // Initialize YouTube player
+        function initializePlayer() {
+            // Load YouTube IFrame API script if not already loaded
+            if (!document.getElementById('youtube-api-script')) {
+                const tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                tag.id = "youtube-api-script";
+                const firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+            }
+            
+            // This function will be called by YouTube API when ready
+            window.onYouTubeIframeAPIReady = function() {
+                player = new YT.Player('player', {
+                    height: '100%',
+                    width: '100%',
+                    playerVars: {
+                        'autoplay': 1,
+                        'controls': 0,
+                        'disablekb': 1,
+                        'modestbranding': 1,
+                        'rel': 0,
+                        'showinfo': 0
+                    },
+                    events: {
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange
+                    }
+                });
+            };
+        }
+
+        // Player ready event handler
+        function onPlayerReady(event) {
+            // Hide loading and show player
+            loadingElement.style.display = 'none';
+            playerContainer.style.display = 'block';
+            
+            // Set playback rate
+            event.target.setPlaybackRate(playbackRate);
+            speedBtn.textContent = `${playbackRate}x`;
+            
+            // Start progress update interval
+            updateInterval = setInterval(updateProgress, 1000);
+            
+            // Show floating player
+            floatingPlayer.classList.add('active');
+        }
+
+        // Player state change event handler
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                document.querySelector('.play-btn i').className = 'fas fa-pause';
+                floatingPlayBtn.querySelector('i').className = 'fas fa-pause';
+            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                isPlaying = false;
+                document.querySelector('.play-btn i').className = 'fas fa-play';
+                floatingPlayBtn.querySelector('i').className = 'fas fa-play';
+            }
+            
+            // Update duration display
+            if (event.data === YT.PlayerState.PLAYING || event.data === YT.PlayerState.PAUSED) {
+                updateDurationDisplay();
+            }
+        }
+
+        // Get video info (title, thumbnail) using YouTube Data API
+        function getVideoInfo(videoId) {
+            // In a real app, you would use the YouTube Data API with your own API key
+            // For this demo, we'll simulate it with a timeout
+            
+            setTimeout(() => {
+                // Simulated data - in a real app you would fetch this from YouTube API
+                currentVideoTitle = "Demo Song Title";
+                currentVideoArtist = "Demo Artist";
+                currentVideoThumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                
+                // Fallback to lower quality thumbnail if maxres doesn't exist
+                const img = new Image();
+                img.onerror = function() {
+                    currentVideoThumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                    updateUIWithVideoInfo();
+                };
+                img.src = currentVideoThumbnail;
+                img.onload = function() {
+                    updateUIWithVideoInfo();
+                };
+            }, 1000);
+        }
+
+        // Update UI with video info
+        function updateUIWithVideoInfo() {
+            songTitle.textContent = currentVideoTitle;
+            songArtist.textContent = currentVideoArtist;
+            
+            floatingTitle.textContent = currentVideoTitle;
+            floatingArtist.textContent = currentVideoArtist;
+            floatingThumbnail.src = currentVideoThumbnail;
+            
+            // Check if this video is liked
+            isLiked = likedSongs.some(song => song.id === currentVideoId);
+            updateLikeButton();
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            if (!player) return;
+            
+            const currentTime = player.getCurrentTime();
+            const duration = player.getDuration();
+            
+            // Update progress bar
+            const progressPercent = (currentTime / duration) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+            
+            // Update time displays
+            currentTimeDisplay.textContent = formatTime(currentTime);
+            
+            // Update floating player progress if needed
+            // (In a real app, you might show a mini progress bar)
+        }
+
+        // Update duration display
+        function updateDurationDisplay() {
+            if (!player) return;
+            
+            const duration = player.getDuration();
+            durationDisplay.textContent = formatTime(duration);
+        }
+
+        // Format time (seconds to MM:SS)
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Progress bar click handler
+        progressContainer.addEventListener('click', (e) => {
+            if (!player) return;
+            
+            const rect = progressContainer.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            const duration = player.getDuration();
+            player.seekTo(duration * pos);
+        });
+
+        // Like button click handler
+        likeBtn.addEventListener('click', toggleLike);
+        floatingLikeBtn.addEventListener('click', toggleLike);
+
+        // Toggle like status
+        function toggleLike() {
+            if (!currentVideoId) return;
+            
+            isLiked = !isLiked;
+            
+            if (isLiked) {
+                // Add to liked songs
+                const song = {
+                    id: currentVideoId,
+                    title: currentVideoTitle,
+                    artist: currentVideoArtist,
+                    thumbnail: currentVideoThumbnail,
+                    timestamp: new Date().getTime()
+                };
+                
+                likedSongs.unshift(song); // Add to beginning of array
+                showNotification('Song added to liked!');
+            } else {
+                // Remove from liked songs
+                likedSongs = likedSongs.filter(song => song.id !== currentVideoId);
+                showNotification('Song removed from liked');
+            }
+            
+            // Update UI
+            updateLikeButton();
+            
+            // Save to localStorage
+            localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
+            
+            // If on liked songs tab, re-render
+            if (document.querySelector('.tab-btn[data-tab="liked-tab"]').classList.contains('active')) {
+                renderLikedSongs();
+            }
+        }
+
+        // Update like button appearance
+        function updateLikeButton() {
+            if (isLiked) {
+                likeBtn.innerHTML = '<i class="fas fa-heart"></i>';
+                likeBtn.classList.add('liked');
+                floatingLikeBtn.innerHTML = '<i class="fas fa-heart"></i>';
+                floatingLikeBtn.classList.add('liked');
+            } else {
+                likeBtn.innerHTML = '<i class="far fa-heart"></i>';
+                likeBtn.classList.remove('liked');
+                floatingLikeBtn.innerHTML = '<i class="far fa-heart"></i>';
+                floatingLikeBtn.classList.remove('liked');
+            }
+        }
+
+        // Speed option click handler
+        speedOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                playbackRate = parseFloat(option.getAttribute('data-speed'));
+                
+                // Update player playback rate
+                if (player) {
+                    player.setPlaybackRate(playbackRate);
+                }
+                
+                // Update UI
+                speedOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                speedBtn.textContent = `${playbackRate}x`;
+            });
+        });
+
+        // Render liked songs
+        function renderLikedSongs() {
+            likedSongsContainer.innerHTML = '';
+            
+            if (likedSongs.length === 0) {
+                emptyLikedState.style.display = 'block';
+                return;
+            }
+            
+            emptyLikedState.style.display = 'none';
+            
+            likedSongs.forEach(song => {
+                const songElement = document.createElement('div');
+                songElement.className = 'liked-song-card';
+                songElement.innerHTML = `
+                    <img src="${song.thumbnail}" alt="${song.title}" class="liked-song-thumbnail">
+                    <div class="liked-song-info">
+                        <div class="liked-song-title">${song.title}</div>
+                        <div class="liked-song-artist">${song.artist}</div>
+                        <div class="liked-song-actions">
+                            <button class="control-btn play-liked-btn" data-id="${song.id}">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="control-btn remove-liked-btn" data-id="${song.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                likedSongsContainer.appendChild(songElement);
+            });
+            
+            // Add event listeners to the new buttons
+            document.querySelectorAll('.play-liked-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const videoId = btn.getAttribute('data-id');
+                    loadVideo(videoId);
+                    
+                    // Switch to player tab
+                    document.querySelector('.tab-btn[data-tab="player-tab"]').click();
+                });
+            });
+            
+            document.querySelectorAll('.remove-liked-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const videoId = btn.getAttribute('data-id');
+                    
+                    // Remove from liked songs
+                    likedSongs = likedSongs.filter(song => song.id !== videoId);
+                    localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
+                    
+                    // Re-render
+                    renderLikedSongs();
+                    
+                    // If this is the current playing song, update like button
+                    if (currentVideoId === videoId) {
+                        isLiked = false;
+                        updateLikeButton();
+                    }
+                    
+                    showNotification('Song removed from liked');
+                });
+            });
+            
+            // Click on card to play
+            document.querySelectorAll('.liked-song-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const videoId = card.querySelector('.play-liked-btn').getAttribute('data-id');
+                    loadVideo(videoId);
+                    
+                    // Switch to player tab
+                    document.querySelector('.tab-btn[data-tab="player-tab"]').click();
+                });
+            });
+        }
+
+        // Floating play button click handler
+        floatingPlayBtn.addEventListener('click', () => {
+            if (!player) return;
+            
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        });
+
+        // Show notification
+        function showNotification(message) {
+            notificationMessage.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initial render of liked songs
+        renderLikedSongs();
+
+        // Theme cycling (bonus feature)
+        let currentTheme = 1;
+        document.addEventListener('dblclick', () => {
+            currentTheme = currentTheme % 5 + 1;
+            document.body.className = `theme-${currentTheme}`;
+        });
+
+        // PWA features (bonus)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful');
+                }).catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
+        // Add to home screen prompt (bonus)
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // You could show a custom "Add to Home Screen" button here
+            // and then call deferredPrompt.prompt() when clicked
+        });
+    </script>
+</body>
+</html>
